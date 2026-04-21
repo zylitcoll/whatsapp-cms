@@ -1,0 +1,103 @@
+---
+import Layout from '@/layouts/Layout.astro';
+
+// Check if user is logged in
+const sessionToken = Astro.cookies.get('session_token');
+if (!sessionToken) {
+  return Astro.redirect('/');
+}
+---
+
+<Layout title="Dashboard - WhatsApp CMS">
+  <div class="min-h-screen bg-gray-900">
+    <nav class="bg-gray-800 border-b border-gray-700 p-4 sticky top-0 z-50">
+      <div class="max-w-7xl mx-auto flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <h1 class="text-2xl font-bold text-green-500">📱 WhatsApp CMS</h1>
+        </div>
+        <div class="flex items-center gap-4">
+          <span class="text-gray-300">👤 Admin</span>
+          <button
+            id="logoutBtn"
+            class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition font-semibold text-sm"
+          >
+            Logout
+          </button>
+        </div>
+      </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto p-6">
+      <!-- Statistics -->
+      <div id="statsContainer"></div>
+
+      <!-- Main Chat Layout -->
+      <div class="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Contacts Sidebar -->
+        <div class="lg:col-span-1 bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+          <div class="p-4 border-b border-gray-700 bg-gray-700">
+            <h2 class="text-lg font-bold text-white">Conversations</h2>
+          </div>
+          <div id="contactsContainer" class="h-screen"></div>
+        </div>
+
+        <!-- Chat Area -->
+        <div class="lg:col-span-2 flex flex-col gap-6">
+          <!-- Chat Window -->
+          <div id="chatContainer" class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden h-96">
+          </div>
+
+          <!-- Templates & Quick Replies -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div id="templatesContainer"></div>
+            <div id="cannedResponsesContainer"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  import ContactList from '@/components/ContactList';
+  import ChatWindow from '@/components/ChatWindow';
+  import TemplateManager from '@/components/TemplateManager';
+  import CannedResponses from '@/components/CannedResponses';
+  import DashboardStats from '@/components/DashboardStats';
+
+  // Get session token
+  const sessionToken = localStorage.getItem('session_token') || '';
+
+  // Current selected contact
+  let selectedContact: any = null;
+
+  // Initialize components
+  const statsContainer = document.getElementById('statsContainer');
+  const contactsContainer = document.getElementById('contactsContainer');
+  const chatContainer = document.getElementById('chatContainer');
+  const templatesContainer = document.getElementById('templatesContainer');
+  const cannedResponsesContainer = document.getElementById('cannedResponsesContainer');
+  const logoutBtn = document.getElementById('logoutBtn');
+
+  // Render stats
+  if (statsContainer) {
+    import('@/components/DashboardStats').then(({ default: DashboardStats }) => {
+      const root = document.createElement('div');
+      statsContainer.appendChild(root);
+      // Note: In a real app, you'd use React hydration or another method
+    });
+  }
+
+  // Handle logout
+  logoutBtn?.addEventListener('click', async () => {
+    await fetch('/api/auth/logout', {
+      method: 'POST',
+      headers: { 'x-session-token': sessionToken },
+    });
+    localStorage.removeItem('session_token');
+    window.location.href = '/';
+  });
+
+  // This is a simplified integration - in production you'd use proper Astro islands
+  console.log('Dashboard initialized. Session token:', sessionToken ? '✓' : '✗');
+</script>

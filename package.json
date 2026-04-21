@@ -9,9 +9,35 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:drop": "drizzle-kit drop",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
-    "astro": "^6.1.8"
+    "@astrojs/react": "^5.0.3",
+    "@astrojs/vercel": "^10.0.4",
+    "@supabase/supabase-js": "^2.104.0",
+    "@tailwindcss/vite": "^4.2.3",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "astro": "^6.1.8",
+    "axios": "^1.15.1",
+    "crypto-js": "^4.2.0",
+    "dotenv": "^17.4.2",
+    "drizzle-kit": "^0.31.10",
+    "drizzle-orm": "^0.45.2",
+    "node-fetch": "^3.3.2",
+    "pg": "^8.20.0",
+    "postgres": "^3.4.9",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "tailwindcss": "^4.2.3",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0"
   }
 }
