@@ -68,18 +68,17 @@ async function handleMessageChange(change: MetaWebhookChange): Promise<void> {
         contacts_data?.find((c) => c.wa_id === fromPhoneNumber)?.profile
           ?.name || "Unknown";
 
-      contact = (
-        await db.insert(contacts).values({
+      const newContact = await db
+        .insert(contacts)
+        .values({
           id: crypto.randomUUID(),
           phoneNumber: fromPhoneNumber,
           displayName: contactName,
           label: "other",
         })
-      ).returning();
+        .returning();
 
-      if (Array.isArray(contact)) {
-        contact = contact[0];
-      }
+      contact = newContact[0];
     }
 
     // Store message
@@ -230,14 +229,17 @@ async function handleHistoryChange(change: MetaWebhookChange): Promise<void> {
       });
 
       if (!contact) {
-        contact = (
-          await db.insert(contacts).values({
+        const newContact = await db
+          .insert(contacts)
+          .values({
             id: crypto.randomUUID(),
             phoneNumber: waId,
             displayName: username,
             label: "other",
           })
-        ).returning()[0];
+          .returning();
+
+        contact = newContact[0];
       }
 
       for (const msg of threadMessages) {
