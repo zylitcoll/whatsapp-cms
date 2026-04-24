@@ -16,7 +16,7 @@ export default function ContactList({
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
-  const fetchContacts = async (searchTerm = "", showLoading = true) => {
+  const fetchContacts = async (searchTerm = "", showLoading = false) => {
     if (showLoading) setLoading(true);
     try {
       const params = new URLSearchParams();

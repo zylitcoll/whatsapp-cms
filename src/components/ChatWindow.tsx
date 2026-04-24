@@ -36,7 +36,7 @@ export default function ChatWindow({
     }
   };
 
-  const fetchMessages = async (showLoading = true) => {
+  const fetchMessages = async (showLoading = false) => {
     if (!contact) return;
     if (showLoading) setLoading(true);
     try {
