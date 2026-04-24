@@ -104,20 +104,24 @@ if (!sessionToken) {
       );
     };
 
+    const renderContacts = (contact) => {
+      contactRoot.render(
+        React.createElement(ContactList, {
+          sessionToken: sessionToken,
+          onSelectContact: handleContactSelect,
+          selectedContactId: contact?.id
+        })
+      );
+    }
+
     const handleContactSelect = (contact) => {
       currentContact = contact;
       renderChat(contact);
+      renderContacts(contact);
     };
 
-    contactRoot.render(
-      React.createElement(ContactList, {
-        sessionToken: sessionToken,
-        onSelectContact: handleContactSelect,
-        selectedContactId: currentContact?.id
-      })
-    );
-    
-    // Initial render for chat
+    // Initial render
+    renderContacts(null);
     renderChat(null);
   }
 </script>

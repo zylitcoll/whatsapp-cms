@@ -48,7 +48,7 @@ export const GET: APIRoute = async ({ request }) => {
     // Get latest message for each contact
     const contactsWithMessages = await Promise.all(
       allContacts.slice(offset, offset + limit).map(async (contact) => {
-        const latestMessage = await db.query.messagesTable.findFirst({
+        const latestMessage = await db.query.messages.findFirst({
           where: eq(messagesTable.contactId, contact.id),
           orderBy: desc(messagesTable.timestamp),
         });
