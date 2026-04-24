@@ -262,12 +262,19 @@ async function handleHistoryChange(change: MetaWebhookChange): Promise<void> {
         // Parse content based on type
         if (msg.type === "text" && msg.text) {
           messageContent.body = msg.text.body;
+        } else if (msg.type === "text" && msg.message?.text) {
+          // Fallback if Meta uses different history payload structure
+          messageContent.body = msg.message.text.body;
         } else if (["image", "video", "audio", "document"].includes(msg.type)) {
           // Historical media usually only provides ID
-          const mediaField = msg[msg.type];
+          const mediaField = msg[msg.type] || msg.message?.[msg.type];
           if (mediaField && mediaField.id) {
             messageContent.id = mediaField.id;
           }
+        } else if (msg.type === "media_placeholder") {
+          // Fallback for placeholder history
+          messageType = "text";
+          messageContent.body = "[Media Placeholder]";
         }
 
         // Insert historical message

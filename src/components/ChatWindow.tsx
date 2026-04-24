@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect, useRef } from 'react';
-import type { WhatsAppMessage, WhatsAppContact } from '@/types';
+import React, { useState, useEffect, useRef } from "react";
+import type { WhatsAppMessage, WhatsAppContact } from "@/types";
 
 interface ChatWindowProps {
   contact: WhatsAppContact | null;
@@ -9,10 +9,14 @@ interface ChatWindowProps {
   onMessageSent?: () => void;
 }
 
-export default function ChatWindow({ contact, sessionToken, onMessageSent }: ChatWindowProps) {
+export default function ChatWindow({
+  contact,
+  sessionToken,
+  onMessageSent,
+}: ChatWindowProps) {
   const [messages, setMessages] = useState<WhatsAppMessage[]>([]);
   const [loading, setLoading] = useState(false);
-  const [messageText, setMessageText] = useState('');
+  const [messageText, setMessageText] = useState("");
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -27,7 +31,7 @@ export default function ChatWindow({ contact, sessionToken, onMessageSent }: Cha
   }, [messages]);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   const fetchMessages = async () => {
@@ -36,16 +40,16 @@ export default function ChatWindow({ contact, sessionToken, onMessageSent }: Cha
     try {
       const response = await fetch(`/api/messages/${contact.id}?limit=50`, {
         headers: {
-          'x-session-token': sessionToken,
+          "x-session-token": sessionToken,
         },
       });
 
-      if (!response.ok) throw new Error('Failed to fetch messages');
+      if (!response.ok) throw new Error("Failed to fetch messages");
 
       const data = await response.json();
       setMessages(data.data.messages || []);
     } catch (error) {
-      console.error('Error fetching messages:', error);
+      console.error("Error fetching messages:", error);
     } finally {
       setLoading(false);
     }
@@ -57,11 +61,11 @@ export default function ChatWindow({ contact, sessionToken, onMessageSent }: Cha
 
     setSending(true);
     try {
-      const response = await fetch('/api/messages/send', {
-        method: 'POST',
+      const response = await fetch("/api/messages/send", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'x-session-token': sessionToken,
+          "Content-Type": "application/json",
+          "x-session-token": sessionToken,
         },
         body: JSON.stringify({
           recipientPhoneNumber: contact.phoneNumber,
@@ -69,14 +73,14 @@ export default function ChatWindow({ contact, sessionToken, onMessageSent }: Cha
         }),
       });
 
-      if (!response.ok) throw new Error('Failed to send message');
+      if (!response.ok) throw new Error("Failed to send message");
 
-      setMessageText('');
+      setMessageText("");
       await fetchMessages();
       onMessageSent?.();
     } catch (error) {
-      console.error('Error sending message:', error);
-      alert('Failed to send message');
+      console.error("Error sending message:", error);
+      alert("Failed to send message");
     } finally {
       setSending(false);
     }
@@ -91,24 +95,24 @@ export default function ChatWindow({ contact, sessionToken, onMessageSent }: Cha
   }
 
   const formatTime = (timestamp: number) => {
-    return new Date(timestamp * 1000).toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
+    return new Date(timestamp * 1000).toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'sent':
-        return '✓';
-      case 'delivered':
-        return '✓✓';
-      case 'read':
-        return '✓✓';
-      case 'failed':
-        return '✗';
+      case "sent":
+        return "✓";
+      case "delivered":
+        return "✓✓";
+      case "read":
+        return "✓✓";
+      case "failed":
+        return "✗";
       default:
-        return '⏱';
+        return "⏱";
     }
   };
 
@@ -130,7 +134,9 @@ export default function ChatWindow({ contact, sessionToken, onMessageSent }: Cha
           </div>
         )}
         <div>
-          <p className="font-semibold text-white">{contact.displayName || contact.phoneNumber}</p>
+          <p className="font-semibold text-white">
+            {contact.displayName || contact.phoneNumber}
+          </p>
           <p className="text-xs text-gray-400">{contact.phoneNumber}</p>
         </div>
       </div>
@@ -149,26 +155,29 @@ export default function ChatWindow({ contact, sessionToken, onMessageSent }: Cha
           messages.map((msg) => (
             <div
               key={msg.id}
-              className={`flex ${msg.direction === 'outbound' ? 'justify-end' : 'justify-start'}`}
+              className={`flex ${msg.direction === "outbound" ? "justify-end" : "justify-start"}`}
             >
               <div
                 className={`max-w-xs px-4 py-2 rounded-lg ${
-                  msg.direction === 'outbound'
-                    ? 'bg-green-600 text-white'
-                    : 'bg-gray-800 text-gray-100'
+                  msg.direction === "outbound"
+                    ? "bg-green-600 text-white"
+                    : "bg-gray-800 text-gray-100"
                 }`}
               >
                 <p className="break-words">
-                  {msg.messageType === 'text'
-                    ? msg.content?.body
+                  {msg.messageType === "text"
+                    ? msg.content?.body || "[Empty Message]"
                     : `[${msg.messageType.toUpperCase()}]`}
                 </p>
-                <p className={`text-xs mt-1 ${
-                  msg.direction === 'outbound'
-                    ? 'text-green-200'
-                    : 'text-gray-500'
-                }`}>
-                  {formatTime(msg.timestamp)} {msg.direction === 'outbound' && getStatusIcon(msg.status)}
+                <p
+                  className={`text-xs mt-1 ${
+                    msg.direction === "outbound"
+                      ? "text-green-200"
+                      : "text-gray-500"
+                  }`}
+                >
+                  {formatTime(msg.timestamp)}{" "}
+                  {msg.direction === "outbound" && getStatusIcon(msg.status)}
                 </p>
               </div>
             </div>
@@ -195,7 +204,7 @@ export default function ChatWindow({ contact, sessionToken, onMessageSent }: Cha
           disabled={sending || !messageText.trim()}
           className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed font-semibold"
         >
-          {sending ? 'Sending...' : 'Send'}
+          {sending ? "Sending..." : "Send"}
         </button>
       </form>
     </div>
