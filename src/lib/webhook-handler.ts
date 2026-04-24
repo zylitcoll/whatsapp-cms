@@ -187,18 +187,40 @@ async function handleAutoReply(
   messageType: string,
   messageContent: Record<string, any>,
 ): Promise<void> {
-  // Example: Auto-reply outside business hours
+  // === CONTOH 1: Balasan Otomatis Di Luar Jam Kerja ===
   const hour = new Date().getHours();
   const isOutsideBusinessHours = hour < 9 || hour > 18;
 
   if (isOutsideBusinessHours && messageType === "text") {
     try {
-      await metaApi.sendTextMessage(
-        phoneNumber,
-        "Thank you for your message. We are currently offline. We will get back to you during business hours (9 AM - 6 PM).",
-      );
+      // Hapus atau comment baris di bawah ini jika tidak ingin menggunakan auto-reply jam kerja
+      // await metaApi.sendTextMessage(
+      //   phoneNumber,
+      //   "Terima kasih atas pesan Anda. Kami sedang offline saat ini dan akan membalas pesan Anda pada jam kerja (09:00 - 18:00).",
+      // );
     } catch (error) {
       console.error("Error sending auto-reply:", error);
+    }
+  }
+
+  // === CONTOH 2: Balasan Berdasarkan Keyword (Kata Kunci) ===
+  if (messageType === "text" && messageContent.body) {
+    const text = messageContent.body.toLowerCase();
+
+    if (text === "ping" || text === "halo" || text === "hi") {
+      try {
+        await metaApi.sendTextMessage(
+          phoneNumber,
+          "Halo! Selamat datang di WhatsApp CMS kami. Ada yang bisa kami bantu? Ketik 'INFO' untuk melihat layanan kami.",
+        );
+      } catch (error) {}
+    } else if (text === "info") {
+      try {
+        await metaApi.sendTextMessage(
+          phoneNumber,
+          "Layanan kami meliputi:\n1. Pembuatan Website\n2. Integrasi WhatsApp API\n3. Desain Grafis",
+        );
+      } catch (error) {}
     }
   }
 }

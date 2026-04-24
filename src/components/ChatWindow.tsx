@@ -20,23 +20,25 @@ export default function ChatWindow({
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (contact) {
-      fetchMessages();
+  const markMessagesAsRead = async () => {
+    if (!contact) return;
+    try {
+      await fetch("/api/messages/read", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-session-token": sessionToken,
+        },
+        body: JSON.stringify({ contactId: contact.id }),
+      });
+    } catch (error) {
+      console.error("Error marking messages as read:", error);
     }
-  }, [contact]);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const fetchMessages = async () => {
+  const fetchMessages = async (showLoading = true) => {
     if (!contact) return;
-    setLoading(true);
+    if (showLoading) setLoading(true);
     try {
       const response = await fetch(`/api/messages/${contact.id}?limit=50`, {
         headers: {
@@ -47,12 +49,43 @@ export default function ChatWindow({
       if (!response.ok) throw new Error("Failed to fetch messages");
 
       const data = await response.json();
-      setMessages(data.data.messages || []);
+      const fetchedMessages = data.data.messages || [];
+      setMessages(fetchedMessages);
+
+      // Check if there are any unread inbound messages
+      const hasUnread = fetchedMessages.some(
+        (m: WhatsAppMessage) =>
+          m.direction === "inbound" && m.status !== "read",
+      );
+      if (hasUnread) {
+        markMessagesAsRead();
+      }
     } catch (error) {
       console.error("Error fetching messages:", error);
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    if (contact) {
+      fetchMessages(true);
+
+      // Real-time polling: Check for new messages every 3 seconds
+      const interval = setInterval(() => {
+        fetchMessages(false);
+      }, 3000);
+
+      return () => clearInterval(interval);
+    }
+  }, [contact]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   const handleSendMessage = async (e: React.FormEvent) => {
