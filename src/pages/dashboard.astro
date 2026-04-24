@@ -1,5 +1,10 @@
 ---
 import Layout from '@/layouts/Layout.astro';
+import ContactList from '@/components/ContactList';
+import ChatWindow from '@/components/ChatWindow';
+import TemplateManager from '@/components/TemplateManager';
+import CannedResponses from '@/components/CannedResponses';
+import DashboardStats from '@/components/DashboardStats';
 
 // Check if user is logged in
 const sessionToken = Astro.cookies.get('session_token');
@@ -27,77 +32,81 @@ if (!sessionToken) {
       </div>
     </nav>
 
-    <div class="max-w-7xl mx-auto p-6">
-      <!-- Statistics -->
-      <div id="statsContainer"></div>
-
-      <!-- Main Chat Layout -->
-      <div class="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Contacts Sidebar -->
-        <div class="lg:col-span-1 bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
-          <div class="p-4 border-b border-gray-700 bg-gray-700">
-            <h2 class="text-lg font-bold text-white">Conversations</h2>
-          </div>
-          <div id="contactsContainer" class="h-screen"></div>
-        </div>
-
-        <!-- Chat Area -->
-        <div class="lg:col-span-2 flex flex-col gap-6">
-          <!-- Chat Window -->
-          <div id="chatContainer" class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden h-96">
-          </div>
-
-          <!-- Templates & Quick Replies -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div id="templatesContainer"></div>
-            <div id="cannedResponsesContainer"></div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <!-- React App Wrapper -->
+    <div id="react-app-root" data-session={sessionToken.value}></div>
   </div>
 </Layout>
 
 <script>
-  import ContactList from '@/components/ContactList';
-  import ChatWindow from '@/components/ChatWindow';
-  import TemplateManager from '@/components/TemplateManager';
-  import CannedResponses from '@/components/CannedResponses';
-  import DashboardStats from '@/components/DashboardStats';
-
-  // Get session token
-  const sessionToken = localStorage.getItem('session_token') || '';
-
-  // Current selected contact
-  let selectedContact: any = null;
-
-  // Initialize components
-  const statsContainer = document.getElementById('statsContainer');
-  const contactsContainer = document.getElementById('contactsContainer');
-  const chatContainer = document.getElementById('chatContainer');
-  const templatesContainer = document.getElementById('templatesContainer');
-  const cannedResponsesContainer = document.getElementById('cannedResponsesContainer');
-  const logoutBtn = document.getElementById('logoutBtn');
-
-  // Render stats
-  if (statsContainer) {
-    import('@/components/DashboardStats').then(({ default: DashboardStats }) => {
-      const root = document.createElement('div');
-      statsContainer.appendChild(root);
-      // Note: In a real app, you'd use React hydration or another method
-    });
-  }
-
   // Handle logout
+  const logoutBtn = document.getElementById('logoutBtn');
+  const sessionToken = document.getElementById('react-app-root')?.dataset.session;
+  
   logoutBtn?.addEventListener('click', async () => {
-    await fetch('/api/auth/logout', {
-      method: 'POST',
-      headers: { 'x-session-token': sessionToken },
-    });
+    if (sessionToken) {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: { 'x-session-token': sessionToken },
+      });
+    }
     localStorage.removeItem('session_token');
+    document.cookie = 'session_token=; Max-Age=0; path=/;';
     window.location.href = '/';
   });
+</script>
 
-  // This is a simplified integration - in production you'd use proper Astro islands
-  console.log('Dashboard initialized. Session token:', sessionToken ? '✓' : '✗');
+<script>
+  import React, { useState } from 'react';
+  import { createRoot } from 'react-dom/client';
+  import ContactList from '@/components/ContactList';
+  import ChatWindow from '@/components/ChatWindow';
+  import DashboardStats from '@/components/DashboardStats';
+  import TemplateManager from '@/components/TemplateManager';
+  import CannedResponses from '@/components/CannedResponses';
+
+  const App = () => {
+    const sessionToken = document.getElementById('react-app-root')?.dataset.session || '';
+    const [selectedContact, setSelectedContact] = useState(null);
+
+    return (
+      <div className="max-w-7xl mx-auto p-6">
+        <DashboardStats sessionToken={sessionToken} />
+
+        <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-1 bg-gray-800 rounded-lg border border-gray-700 overflow-hidden flex flex-col h-[600px]">
+            <div className="p-4 border-b border-gray-700 bg-gray-700">
+              <h2 className="text-lg font-bold text-white">Conversations</h2>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              <ContactList 
+                sessionToken={sessionToken} 
+                onSelectContact={setSelectedContact}
+                selectedContactId={selectedContact?.id}
+              />
+            </div>
+          </div>
+
+          <div className="lg:col-span-2 flex flex-col gap-6">
+            <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden h-[400px]">
+              <ChatWindow 
+                contact={selectedContact} 
+                sessionToken={sessionToken} 
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <TemplateManager sessionToken={sessionToken} />
+              <CannedResponses sessionToken={sessionToken} />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const rootEl = document.getElementById('react-app-root');
+  if (rootEl) {
+    const root = createRoot(rootEl);
+    root.render(<App />);
+  }
 </script>
