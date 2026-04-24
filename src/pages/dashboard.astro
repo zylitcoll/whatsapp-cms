@@ -32,15 +32,46 @@ if (!sessionToken) {
       </div>
     </nav>
 
-    <!-- React App Wrapper -->
-    <div id="react-app-root" data-session={sessionToken.value}></div>
+    <!-- App Wrapper handled by Astro Islands -->
+    <div id="react-app-wrapper" data-session={sessionToken.value}>
+      <div class="max-w-7xl mx-auto p-6">
+        <DashboardStats client:load sessionToken={sessionToken.value} />
+
+        <div class="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div class="lg:col-span-1 bg-gray-800 rounded-lg border border-gray-700 overflow-hidden flex flex-col h-[600px]">
+            <div class="p-4 border-b border-gray-700 bg-gray-700">
+              <h2 class="text-lg font-bold text-white">Conversations</h2>
+            </div>
+            <div class="flex-1 overflow-y-auto" id="contact-list-container">
+              <!-- Will be mounted by script -->
+            </div>
+          </div>
+
+          <div class="lg:col-span-2 flex flex-col gap-6">
+            <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden h-[400px]" id="chat-window-container">
+               <!-- Will be mounted by script -->
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <TemplateManager client:load sessionToken={sessionToken.value} />
+              <CannedResponses client:load sessionToken={sessionToken.value} />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </Layout>
 
 <script>
+  import React from 'react';
+  import { createRoot } from 'react-dom/client';
+  import ContactList from '@/components/ContactList';
+  import ChatWindow from '@/components/ChatWindow';
+
   // Handle logout
   const logoutBtn = document.getElementById('logoutBtn');
-  const sessionToken = document.getElementById('react-app-root')?.dataset.session;
+  const sessionToken = document.getElementById('react-app-wrapper')?.dataset.session;
   
   logoutBtn?.addEventListener('click', async () => {
     if (sessionToken) {
@@ -53,60 +84,40 @@ if (!sessionToken) {
     document.cookie = 'session_token=; Max-Age=0; path=/;';
     window.location.href = '/';
   });
-</script>
 
-<script>
-  import React, { useState } from 'react';
-  import { createRoot } from 'react-dom/client';
-  import ContactList from '@/components/ContactList';
-  import ChatWindow from '@/components/ChatWindow';
-  import DashboardStats from '@/components/DashboardStats';
-  import TemplateManager from '@/components/TemplateManager';
-  import CannedResponses from '@/components/CannedResponses';
+  // Render interconnected React components
+  const contactContainer = document.getElementById('contact-list-container');
+  const chatContainer = document.getElementById('chat-window-container');
 
-  const App = () => {
-    const sessionToken = document.getElementById('react-app-root')?.dataset.session || '';
-    const [selectedContact, setSelectedContact] = useState(null);
+  if (contactContainer && chatContainer && sessionToken) {
+    // Shared state management for Vanilla JS <-> React integration
+    let currentContact = null;
+    let chatRoot = createRoot(chatContainer);
+    let contactRoot = createRoot(contactContainer);
 
-    return (
-      <div className="max-w-7xl mx-auto p-6">
-        <DashboardStats sessionToken={sessionToken} />
+    const renderChat = (contact) => {
+      chatRoot.render(
+        React.createElement(ChatWindow, {
+          contact: contact,
+          sessionToken: sessionToken
+        })
+      );
+    };
 
-        <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-1 bg-gray-800 rounded-lg border border-gray-700 overflow-hidden flex flex-col h-[600px]">
-            <div className="p-4 border-b border-gray-700 bg-gray-700">
-              <h2 className="text-lg font-bold text-white">Conversations</h2>
-            </div>
-            <div className="flex-1 overflow-y-auto">
-              <ContactList 
-                sessionToken={sessionToken} 
-                onSelectContact={setSelectedContact}
-                selectedContactId={selectedContact?.id}
-              />
-            </div>
-          </div>
+    const handleContactSelect = (contact) => {
+      currentContact = contact;
+      renderChat(contact);
+    };
 
-          <div className="lg:col-span-2 flex flex-col gap-6">
-            <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden h-[400px]">
-              <ChatWindow 
-                contact={selectedContact} 
-                sessionToken={sessionToken} 
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <TemplateManager sessionToken={sessionToken} />
-              <CannedResponses sessionToken={sessionToken} />
-            </div>
-          </div>
-        </div>
-      </div>
+    contactRoot.render(
+      React.createElement(ContactList, {
+        sessionToken: sessionToken,
+        onSelectContact: handleContactSelect,
+        selectedContactId: currentContact?.id
+      })
     );
-  };
-
-  const rootEl = document.getElementById('react-app-root');
-  if (rootEl) {
-    const root = createRoot(rootEl);
-    root.render(<App />);
+    
+    // Initial render for chat
+    renderChat(null);
   }
 </script>
