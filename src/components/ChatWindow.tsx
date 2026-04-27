@@ -57,7 +57,9 @@ export default function ChatWindow({
         (m: WhatsAppMessage) =>
           m.direction === "inbound" && m.status !== "read",
       );
-      if (hasUnread) {
+
+      // Prevent marking as read if we are currently sending a message to avoid API race conditions
+      if (hasUnread && !sending) {
         markMessagesAsRead();
       }
     } catch (error) {
@@ -109,8 +111,11 @@ export default function ChatWindow({
       if (!response.ok) throw new Error("Failed to send message");
 
       setMessageText("");
-      await fetchMessages();
-      onMessageSent?.();
+      // Add a small delay before fetching messages again so Meta has time to process the webhook
+      setTimeout(async () => {
+        await fetchMessages(false);
+        onMessageSent?.();
+      }, 500);
     } catch (error) {
       console.error("Error sending message:", error);
       alert("Failed to send message");
